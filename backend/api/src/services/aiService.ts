@@ -60,6 +60,62 @@ export const extractResumeDetails = async (resumeText: string) => {
   }
 };
 
+export const generateCoverLetter = async (
+  candidateName: string,
+  candidateSkills: string,
+  experience: string,
+  jobTitle: string,
+  jobDescription: string,
+  companyName: string
+): Promise<{ coverLetter: string }> => {
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy_key' || process.env.OPENAI_API_KEY === '') {
+    return {
+      coverLetter: `Dear Hiring Manager at ${companyName},
+
+I am writing to express my enthusiastic interest in the ${jobTitle} position at ${companyName}. With my background in ${candidateSkills}, I am confident I would be a strong addition to your team.
+
+${experience ? `Over my ${experience} of professional experience, I have` : 'I have'} developed a deep expertise in the skills required for this role. The opportunity at ${companyName} excites me particularly because of the innovative work described in your job posting.
+
+My technical skills in ${candidateSkills.split(',').slice(0, 3).join(', ')} align directly with the requirements you have outlined. I am a quick learner who thrives in collaborative environments and I am eager to bring my experience to bear on the challenges facing your team.
+
+I would welcome the opportunity to discuss how my background and skills would benefit ${companyName}. Thank you for considering my application.
+
+Sincerely,
+${candidateName}`,
+    };
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert career coach and professional writer. Write compelling, personalized cover letters. Return ONLY a JSON object with key "coverLetter" (string). Use \\n\\n for paragraph breaks.',
+        },
+        {
+          role: 'user',
+          content: `Write a professional cover letter for:
+- Candidate Name: ${candidateName}
+- Applying for: ${jobTitle} at ${companyName}
+- Their skills: ${candidateSkills}
+- Their experience: ${experience || 'Not specified'}
+- Job Description: ${jobDescription.substring(0, 500)}
+
+Make it personalized, enthusiastic, and about 3 paragraphs. Reference specific skills from their profile that match the job.`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0].message.content;
+    return JSON.parse(content || '{}');
+  } catch (error) {
+    console.error('Error generating cover letter:', error);
+    return { coverLetter: 'Unable to generate cover letter. Please try again.' };
+  }
+};
+
 export const generateCandidateEmail = async (
   candidateName: string,
   candidateSkills: string,

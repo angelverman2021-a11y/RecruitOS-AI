@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const navItems = [
-  { to: '/',           label: '📊 Dashboard' },
-  { to: '/jobs',       label: '💼 Jobs'      },
-  { to: '/candidates', label: '👥 Candidates' },
+  { to: '/',          label: '📊 Dashboard'   },
+  { to: '/jobs',      label: '💼 Jobs'         },
+  { to: '/candidates',label: '👥 Candidates'   },
+  { to: '/ai-tools',  label: '🤖 AI Tools'     },
 ];
 
 export function Sidebar() {
@@ -43,7 +44,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User + Logout */}
+      {/* Logout */}
       <div className="px-3 py-4 border-t border-gray-200">
         <button
           onClick={handleLogout}

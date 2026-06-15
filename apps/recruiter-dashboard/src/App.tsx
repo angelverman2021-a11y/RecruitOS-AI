@@ -4,6 +4,7 @@ import { AuthGuard } from './components/AuthGuard';
 import { Dashboard } from './pages/Dashboard';
 import { Jobs } from './pages/Jobs';
 import { Candidates } from './pages/Candidates';
+import { AITools } from './pages/AITools';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 
@@ -19,6 +20,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="jobs" element={<Jobs />} />
             <Route path="candidates" element={<Candidates />} />
+            <Route path="ai-tools" element={<AITools />} />
           </Route>
         </Route>
       </Routes>
