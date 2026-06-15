@@ -1,312 +1,167 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { apiClient } from '../api/client';
+import { Link } from 'react-router-dom';
 
 export function Dashboard() {
-  useEffect(() => {
-    const kpiCards = document.querySelectorAll('.glass-panel');
-    kpiCards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            (card as HTMLElement).style.transform = 'translateY(-2px)';
-        });
-        card.addEventListener('mouseleave', () => {
-            (card as HTMLElement).style.transform = 'translateY(0)';
-        });
-    });
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    const rows = document.querySelectorAll('tbody tr');
-    rows.forEach((row, index) => {
-        (row as HTMLElement).style.opacity = '0';
-        (row as HTMLElement).style.transform = 'translateY(10px)';
-        (row as HTMLElement).style.transition = `all 0.4s ease ${index * 0.1}s`;
-        setTimeout(() => {
-            (row as HTMLElement).style.opacity = '1';
-            (row as HTMLElement).style.transform = 'translateY(0)';
-        }, 100);
-    });
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await apiClient.get('/dashboard/stats');
+        setStats(response.data);
+      } catch (err: any) {
+        setError('Failed to load dashboard data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
   }, []);
 
+  if (loading) return (
+    <div className="p-6 flex items-center gap-2 text-gray-500">
+      <span className="animate-spin">⏳</span> Loading dashboard...
+    </div>
+  );
+  if (error) return (
+    <div className="p-6">
+      <div className="border border-red-200 bg-red-50 text-red-700 p-4 rounded-lg max-w-md">
+        <p className="font-bold mb-1">Failed to load dashboard</p>
+        <p className="text-sm">{error}</p>
+        <p className="text-sm mt-2">Make sure the backend is running on <code className="bg-red-100 px-1 rounded">http://localhost:5000</code></p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-panel rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <span className="material-symbols-outlined text-[20px]">assignment</span>
-            </div>
-            <span className="text-xs font-mono text-tertiary font-bold">+12% ↑</span>
-          </div>
-          <h3 className="text-on-surface-variant text-body-sm mb-1">Open Positions</h3>
-          <p className="text-2xl font-bold font-headline-md">48</p>
-          <div className="mt-4 h-8 flex items-end gap-1">
-            <div className="flex-1 bg-primary/20 h-2 rounded-full overflow-hidden">
-              <div className="bg-primary h-full w-[65%]"></div>
-            </div>
-          </div>
-        </div>
+    <div className="p-6 bg-gray-50 min-h-screen text-gray-900">
+      <h1 className="text-2xl font-bold mb-6 text-indigo-900">Dashboard Overview</h1>
 
-        <div className="glass-panel rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-tertiary/10 rounded-lg text-tertiary">
-              <span className="material-symbols-outlined text-[20px]">group_add</span>
-            </div>
-            <span className="text-xs font-mono text-tertiary font-bold">+24% ↑</span>
-          </div>
-          <h3 className="text-on-surface-variant text-body-sm mb-1">Applications Today</h3>
-          <p className="text-2xl font-bold font-headline-md">156</p>
-          <div className="mt-4 h-8 flex items-end gap-1">
-            <div className="flex-1 bg-tertiary/20 h-2 rounded-full overflow-hidden">
-              <div className="bg-tertiary h-full w-[82%]"></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-secondary-container/10 rounded-lg text-secondary-container">
-              <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-            </div>
-            <span className="text-xs font-mono text-on-surface-variant font-bold">Stable</span>
-          </div>
-          <h3 className="text-on-surface-variant text-body-sm mb-1">Upcoming Interviews</h3>
-          <p className="text-2xl font-bold font-headline-md">12</p>
-          <div className="mt-4 h-8 flex items-end gap-1">
-            <div className="flex-1 bg-secondary-container/20 h-2 rounded-full overflow-hidden">
-              <div className="bg-secondary-container h-full w-[40%]"></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-outline/10 rounded-lg text-outline">
-              <span className="material-symbols-outlined text-[20px]">database</span>
-            </div>
-            <span className="text-xs font-mono text-tertiary font-bold">+2k ↑</span>
-          </div>
-          <h3 className="text-on-surface-variant text-body-sm mb-1">Total Candidates</h3>
-          <p className="text-2xl font-bold font-headline-md">8,492</p>
-          <div className="mt-4 h-8 flex items-end gap-1">
-            <div className="flex-1 bg-outline/20 h-2 rounded-full overflow-hidden">
-              <div className="bg-outline h-full w-[95%]"></div>
-            </div>
-          </div>
-        </div>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Total Jobs"
+          value={stats?.totalJobs ?? 0}
+          color="blue"
+          icon="💼"
+        />
+        <StatCard
+          label="Open Jobs"
+          value={stats?.openJobs ?? 0}
+          color="green"
+          icon="🟢"
+        />
+        <StatCard
+          label="Total Candidates"
+          value={stats?.totalCandidates ?? 0}
+          color="indigo"
+          icon="👥"
+        />
+        <StatCard
+          label="Hired"
+          value={stats?.hiredCandidates ?? 0}
+          color="emerald"
+          icon="🎉"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 glass-panel ai-glow rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-tertiary/5 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-          <div className="flex items-center gap-2 mb-6">
-            <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-            <h2 className="font-headline-md text-[18px] font-bold">AI Intelligence Report</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Jobs */}
+        <div className="border border-gray-300 p-6 bg-white rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-800">Recent Job Postings</h2>
+            <Link to="/jobs"
+              className="text-sm border border-indigo-300 text-indigo-700 p-1 px-3 rounded hover:bg-indigo-50 font-medium">
+              View All
+            </Link>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="p-4 bg-surface-container-highest rounded-xl border-l-4 border-tertiary">
-                <p className="text-body-sm font-medium mb-1">Weekly Momentum</p>
-                <p className="text-headline-md font-bold gradient-text">Candidate matching is up 12%</p>
-                <p className="text-body-sm text-on-surface-variant/70 mt-2">Enhanced semantic analysis has identified high-quality leads for 3 core technical tracks.</p>
-              </div>
-              <div className="p-4 bg-surface-container-highest rounded-xl border-l-4 border-primary">
-                <p className="text-body-sm font-medium mb-1">Priority Alert</p>
-                <p className="text-body-sm text-on-surface-variant leading-relaxed">Recommended action: Review <span className="text-primary font-bold">Java Developers</span> for the <span className="text-primary font-bold">Fintech Engineering</span> role. 4 candidates meet 95%+ criteria.</p>
-              </div>
+          {!stats?.recentJobs?.length ? (
+            <p className="text-gray-400 italic text-sm p-4 bg-gray-50 rounded">No jobs posted yet.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {stats.recentJobs.map((job: any) => (
+                <div key={job.id}
+                  className="border border-gray-200 p-3 rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{job.title}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {job.department} · {job.location}
+                      {job._count?.candidates != null && (
+                        <span className="ml-2 text-indigo-600 font-medium">
+                          {job._count.candidates} candidate{job._count.candidates !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-xs bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-1 rounded uppercase font-bold tracking-wide">
+                    {job.status}
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className="hidden md:block"></div>
-          </div>
+          )}
         </div>
 
-        <div className="lg:col-span-4 glass-panel rounded-2xl p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-headline-md text-[18px] font-bold">AI Activity</h2>
-            <button className="text-primary text-[12px] font-bold uppercase tracking-wider">View All</button>
+        {/* Top Scored Candidates */}
+        <div className="border border-gray-300 p-6 bg-white rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-800">Top Scored Candidates</h2>
+            <Link to="/candidates"
+              className="text-sm border border-indigo-300 text-indigo-700 p-1 px-3 rounded hover:bg-indigo-50 font-medium">
+              View All
+            </Link>
           </div>
-          <div className="space-y-5 flex-1 custom-scrollbar overflow-y-auto">
-            <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-primary text-[18px]">smart_toy</span>
-              </div>
-              <div>
-                <p className="text-body-sm font-medium">AI Copilot screened <span className="text-primary">42 candidates</span></p>
-                <p className="text-[12px] text-on-surface-variant">Senior Frontend Engineer • 2m ago</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-tertiary text-[18px]">auto_awesome</span>
-              </div>
-              <div>
-                <p className="text-body-sm font-medium">Auto-scheduled <span className="text-tertiary">5 interviews</span></p>
-                <p className="text-[12px] text-on-surface-variant">Product Design Team • 15m ago</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-secondary text-[18px]">mark_as_unread</span>
-              </div>
-              <div>
-                <p className="text-body-sm font-medium">Outreach sequence initiated</p>
-                <p className="text-[12px] text-on-surface-variant">Cloud Architects (Batch B) • 1h ago</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 glass-panel rounded-2xl p-6 overflow-hidden">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="font-headline-md text-[18px] font-bold">Hiring Pipeline</h2>
-              <p className="text-body-sm text-on-surface-variant">Real-time throughput across all roles</p>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-container-highest rounded-full text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-tertiary"></span> High Volume
-              </div>
-            </div>
-          </div>
-          <div className="relative flex items-center h-48 gap-1">
-            <div className="flex-1 pipeline-node bg-surface-container-highest flex flex-col items-center justify-center relative group cursor-pointer hover:bg-surface-variant transition-colors">
-              <span className="text-2xl font-bold">1.2k</span>
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Applied</span>
-            </div>
-            <div className="flex-1 pipeline-node bg-primary-container/20 flex flex-col items-center justify-center relative group cursor-pointer hover:bg-primary-container/30 transition-colors">
-              <span className="text-2xl font-bold text-primary">342</span>
-              <span className="text-[10px] uppercase font-bold text-primary">Screened</span>
-            </div>
-            <div className="flex-1 pipeline-node bg-tertiary-container/20 flex flex-col items-center justify-center relative group cursor-pointer hover:bg-tertiary-container/30 transition-colors">
-              <span className="text-2xl font-bold text-tertiary">84</span>
-              <span className="text-[10px] uppercase font-bold text-tertiary">Interviews</span>
-            </div>
-            <div className="flex-1 pipeline-node bg-surface-container-highest/50 flex flex-col items-center justify-center relative group cursor-pointer hover:bg-surface-variant transition-colors">
-              <span className="text-2xl font-bold">21</span>
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Offers</span>
-            </div>
-            <div className="flex-1 pipeline-node bg-gradient-to-r from-tertiary to-primary flex flex-col items-center justify-center relative group cursor-pointer hover:scale-105 transition-all">
-              <span className="text-2xl font-bold text-surface">18</span>
-              <span className="text-[10px] uppercase font-bold text-surface/80">Hired</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-5 glass-panel rounded-2xl p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-headline-md text-[18px] font-bold">Growth Forecast</h2>
-            <div className="flex gap-4 text-[12px]">
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-tertiary"></span> Actual</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-outline-variant"></span> Target</div>
-            </div>
-          </div>
-          <div className="flex-1 flex items-end justify-between gap-4 pb-2">
-            <div className="flex-1 space-y-2">
-              <div className="h-24 bg-surface-container-highest rounded-t-lg relative">
-                <div className="absolute bottom-0 w-full h-[70%] bg-gradient-to-t from-tertiary/40 to-tertiary rounded-t-lg"></div>
-              </div>
-              <p className="text-center text-[10px] text-on-surface-variant">Oct</p>
-            </div>
-            <div className="flex-1 space-y-2">
-              <div className="h-32 bg-surface-container-highest rounded-t-lg relative">
-                <div className="absolute bottom-0 w-full h-[85%] bg-gradient-to-t from-tertiary/40 to-tertiary rounded-t-lg"></div>
-              </div>
-              <p className="text-center text-[10px] text-on-surface-variant">Nov</p>
-            </div>
-            <div className="flex-1 space-y-2">
-              <div className="h-40 bg-surface-container-highest rounded-t-lg relative overflow-hidden">
-                <div className="absolute bottom-0 w-full h-[60%] bg-gradient-to-t from-tertiary/40 to-tertiary rounded-t-lg"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent"></div>
-              </div>
-              <p className="text-center text-[10px] text-on-surface-variant">Dec</p>
-            </div>
-            <div className="flex-1 space-y-2 opacity-50">
-              <div className="h-44 bg-surface-container-highest rounded-t-lg border-2 border-dashed border-outline-variant"></div>
-              <p className="text-center text-[10px] text-on-surface-variant">Jan (est)</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-panel rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low/50">
-          <h2 className="font-headline-md text-[18px] font-bold">Top Recommendations</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-body-sm text-on-surface-variant">Sort by: AI Match Score</span>
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer">filter_list</span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-label-md text-on-surface-variant uppercase tracking-wider bg-surface-container-lowest/50">
-                <th className="px-6 py-4 font-bold">Candidate</th>
-                <th className="px-6 py-4 font-bold">Role Applied</th>
-                <th className="px-6 py-4 font-bold">Experience</th>
-                <th className="px-6 py-4 font-bold">Match Score</th>
-                <th className="px-6 py-4 font-bold">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/20">
-              <tr className="hover:bg-surface-variant transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">SM</div>
+          {!stats?.topCandidates?.length ? (
+            <p className="text-gray-400 italic text-sm p-4 bg-gray-50 rounded">
+              No candidates scored yet. Add candidates and run AI scoring.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {stats.topCandidates.map((c: any) => {
+                const scoreColor =
+                  c.matchScore >= 85 ? 'text-green-700 bg-green-50 border-green-200' :
+                  c.matchScore >= 60 ? 'text-yellow-700 bg-yellow-50 border-yellow-200' :
+                                       'text-red-700 bg-red-50 border-red-200';
+                return (
+                  <div key={c.id}
+                    className="border border-gray-200 p-3 rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center">
                     <div>
-                      <p className="font-bold text-body-sm">Sarah Miller</p>
-                      <p className="text-[12px] text-on-surface-variant">London, UK</p>
+                      <h3 className="font-bold text-gray-900">{c.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{c.job?.title}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${scoreColor}`}>
+                        {c.matchScore}%
+                      </span>
+                      <span className="text-xs text-gray-400">{c.status}</span>
                     </div>
                   </div>
-                </td>
-                <td className="px-6 py-4 text-body-sm">Senior Frontend Engineer</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <span className="px-2 py-0.5 bg-surface-container-highest text-on-surface text-[10px] rounded uppercase font-bold">React</span>
-                    <span className="px-2 py-0.5 bg-surface-container-highest text-on-surface text-[10px] rounded uppercase font-bold">Next.js</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-surface-container-highest h-1.5 rounded-full w-24">
-                      <div className="bg-tertiary h-full rounded-full" style={{ width: "98%" }}></div>
-                    </div>
-                    <span className="font-mono text-tertiary font-bold">98%</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <button className="px-4 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold border border-primary/20 hover:bg-primary hover:text-surface transition-all">Review</button>
-                </td>
-              </tr>
-              <tr className="hover:bg-surface-variant transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-tertiary/20 flex items-center justify-center text-tertiary font-bold">DK</div>
-                    <div>
-                      <p className="font-bold text-body-sm">David Kim</p>
-                      <p className="text-[12px] text-on-surface-variant">San Francisco, CA</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-body-sm">Cloud Infrastructure Lead</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <span className="px-2 py-0.5 bg-surface-container-highest text-on-surface text-[10px] rounded uppercase font-bold">AWS</span>
-                    <span className="px-2 py-0.5 bg-surface-container-highest text-on-surface text-[10px] rounded uppercase font-bold">Kubernetes</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-surface-container-highest h-1.5 rounded-full w-24">
-                      <div className="bg-tertiary h-full rounded-full" style={{ width: "92%" }}></div>
-                    </div>
-                    <span className="font-mono text-tertiary font-bold">92%</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <button className="px-4 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold border border-primary/20 hover:bg-primary hover:text-surface transition-all">Review</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: string }) {
+  const colors: Record<string, string> = {
+    blue:    'border-blue-200 bg-blue-50 text-blue-900',
+    green:   'border-green-200 bg-green-50 text-green-900',
+    indigo:  'border-indigo-200 bg-indigo-50 text-indigo-900',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  };
+  return (
+    <div className={`border p-4 rounded-lg shadow-sm flex flex-col items-center justify-center ${colors[color] ?? colors.blue}`}>
+      <span className="text-2xl mb-1">{icon}</span>
+      <span className="text-3xl font-extrabold">{value}</span>
+      <span className="text-xs font-bold uppercase tracking-wider mt-1 opacity-70">{label}</span>
     </div>
   );
 }

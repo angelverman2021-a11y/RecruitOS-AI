@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("RECRUITER") // RECRUITER or ADMIN
+  jobs         Job[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  department  String
+  location    String
+  description String
+  status      String   @default("OPEN") // OPEN, CLOSED, DRAFT
+  recruiterId String
+  recruiter   User     @relation(fields: [recruiterId], references: [id])
+  candidates  Candidate[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Candidate {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  skills     String   // Comma separated list of skills
+  experience String?
+  location   String?
+  resumeUrl  String?
+  matchScore Float    @default(0.0)
+  status     String   @default("APPLIED") // APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
+  jobId      String
+  job        Job      @relation(fields: [jobId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

@@ -1,4 +1,8 @@
-/* Cleared default styles */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind is loaded via CDN in index.html */
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #131315;
+  color: #e5e1e4;
+  overflow-x: hidden;
+}
