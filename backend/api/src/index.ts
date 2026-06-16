@@ -9,6 +9,7 @@ import aiRoutes from './routes/aiRoutes';
 import jobRoutes from './routes/jobRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import candidateRoutes from './routes/candidateRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -23,6 +24,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/candidates', candidateRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check
 app.get('/health', async (_req, res) => {

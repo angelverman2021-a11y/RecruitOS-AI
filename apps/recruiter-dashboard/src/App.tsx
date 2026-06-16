@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Jobs } from './pages/Jobs';
 import { Candidates } from './pages/Candidates';
 import { AITools } from './pages/AITools';
+import { Analytics } from './pages/Analytics';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="jobs" element={<Jobs />} />
             <Route path="candidates" element={<Candidates />} />
             <Route path="ai-tools" element={<AITools />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
         </Route>
       </Routes>

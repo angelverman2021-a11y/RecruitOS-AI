@@ -47,3 +47,17 @@ model Candidate {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+// Job Market Intelligence — historical demand data per role
+model JobMarketData {
+  id              String @id @default(uuid())
+  role            String // e.g. "React Developer"
+  year            Int    // 2019, 2020, ...
+  month           Int    // 1-12
+  jobPostings     Int    // number of job postings that month
+  avgSalaryUSD    Int    // average salary in USD
+  topCompanies    String // JSON array of company names
+  topSkills       String // JSON array of skills
+  demandIndex     Float  // 0-100 demand score
+  location        String @default("Global")
+}

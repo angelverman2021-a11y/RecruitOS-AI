@@ -5,6 +5,7 @@ const navItems = [
   { to: '/jobs',       icon: '◈', label: 'Jobs'         },
   { to: '/candidates', icon: '◉', label: 'Candidates'   },
   { to: '/ai-tools',   icon: '◆', label: 'AI Tools'     },
+  { to: '/analytics',  icon: '◇', label: 'Analytics'    },
 ];
 
 export function Sidebar() {
