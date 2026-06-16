@@ -1,269 +1,224 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 
-const STAGES = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'] as const;
+const STAGES = ['APPLIED','SCREENING','INTERVIEW','OFFER','HIRED','REJECTED'] as const;
 type Stage = typeof STAGES[number];
 
-const STAGE_COLORS: Record<Stage, { bg: string; border: string; header: string; badge: string }> = {
-  APPLIED:   { bg: 'bg-gray-50',   border: 'border-gray-300',  header: 'bg-gray-100',   badge: 'bg-gray-200 text-gray-700' },
-  SCREENING: { bg: 'bg-blue-50',   border: 'border-blue-200',  header: 'bg-blue-100',   badge: 'bg-blue-200 text-blue-800' },
-  INTERVIEW: { bg: 'bg-yellow-50', border: 'border-yellow-200',header: 'bg-yellow-100', badge: 'bg-yellow-200 text-yellow-800' },
-  OFFER:     { bg: 'bg-purple-50', border: 'border-purple-200',header: 'bg-purple-100', badge: 'bg-purple-200 text-purple-800' },
-  HIRED:     { bg: 'bg-green-50',  border: 'border-green-200', header: 'bg-green-100',  badge: 'bg-green-200 text-green-800' },
-  REJECTED:  { bg: 'bg-red-50',    border: 'border-red-200',   header: 'bg-red-100',    badge: 'bg-red-200 text-red-700' },
+const STAGE_STYLE: Record<Stage, { header: string; ring: string; dot: string }> = {
+  APPLIED:   { header: 'bg-slate-700',   ring: 'ring-slate-200',   dot: 'bg-slate-400'  },
+  SCREENING: { header: 'bg-blue-600',    ring: 'ring-blue-100',    dot: 'bg-blue-400'   },
+  INTERVIEW: { header: 'bg-amber-500',   ring: 'ring-amber-100',   dot: 'bg-amber-400'  },
+  OFFER:     { header: 'bg-violet-600',  ring: 'ring-violet-100',  dot: 'bg-violet-400' },
+  HIRED:     { header: 'bg-emerald-600', ring: 'ring-emerald-100', dot: 'bg-emerald-400'},
+  REJECTED:  { header: 'bg-red-500',     ring: 'ring-red-100',     dot: 'bg-red-400'    },
 };
 
-function ScoreBadge({ score }: { score: number }) {
-  if (score === 0) return <span className="text-xs text-gray-400 italic">Not scored</span>;
-  const color =
-    score >= 85 ? 'bg-green-100 text-green-800 border-green-200' :
-    score >= 60 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                  'bg-red-100 text-red-700 border-red-200';
-  return (
-    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${color}`}>
-      {score}% match
-    </span>
-  );
+function ScorePill({ score }: { score: number }) {
+  if (!score) return <span className="text-xs text-slate-400">—</span>;
+  const cls = score >= 85 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : score >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : 'bg-red-50 text-red-600 border-red-200';
+  return <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cls}`}>{score}%</span>;
 }
 
-interface EmailPreview {
-  candidateId: string;
-  candidateName: string;
-  candidateEmail: string;
-  matchScore: number;
-  emailType: 'INTERVIEW_INVITATION' | 'REJECTION';
-  subject: string;
-  body: string;
-}
+interface EmailPreview { candidateId:string; candidateName:string; candidateEmail:string; matchScore:number; emailType:string; subject:string; body:string; }
 
 export function Candidates() {
   const [candidates, setCandidates] = useState<any[]>([]);
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loadingScore, setLoadingScore] = useState<string | null>(null);
-  const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
-  const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
+  const [jobs, setJobs]             = useState<any[]>([]);
+  const [showForm, setShowForm]     = useState(false);
+  const [loadingScore, setLoadingScore] = useState<string|null>(null);
+  const [loadingEmail, setLoadingEmail] = useState<string|null>(null);
+  const [emailPreview, setEmailPreview] = useState<EmailPreview|null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError]   = useState('');
 
-  // Form state
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [skills, setSkills] = useState('');
-  const [experience, setExperience] = useState('');
-  const [location, setLocation] = useState('');
-  const [jobId, setJobId] = useState('');
-  const [resumeText, setResumeText] = useState('');
+  const [name, setName]           = useState('');
+  const [email, setEmail]         = useState('');
+  const [skills, setSkills]       = useState('');
+  const [experience, setExp]      = useState('');
+  const [location, setLoc]        = useState('');
+  const [jobId, setJobId]         = useState('');
+  const [resumeText, setResume]   = useState('');
   const [isParsing, setIsParsing] = useState(false);
-  const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [candRes, jobRes] = await Promise.all([
-        apiClient.get('/candidates'),
-        apiClient.get('/jobs'),
-      ]);
-      setCandidates(candRes.data);
-      setJobs(jobRes.data);
-      if (jobRes.data.length > 0 && !jobId) setJobId(jobRes.data[0].id);
-    } catch (err) {
-      console.error('Failed to fetch data', err);
-    }
+      const [cr, jr] = await Promise.all([apiClient.get('/candidates'), apiClient.get('/jobs')]);
+      setCandidates(cr.data); setJobs(jr.data);
+      if (jr.data.length && !jobId) setJobId(jr.data[0].id);
+    } catch { console.error('fetch failed'); }
   };
 
-  const handleParseResume = async () => {
+  const handleParse = async () => {
     if (!resumeText.trim()) return;
-    setIsParsing(true);
-    setFormError('');
+    setIsParsing(true); setFormError('');
     try {
-      const res = await apiClient.post('/ai/parse-resume', { resumeText });
-      const { skills: parsedSkills, experience: parsedExp, location: parsedLoc } = res.data;
-      if (parsedSkills) setSkills(parsedSkills);
-      if (parsedExp) setExperience(parsedExp);
-      if (parsedLoc) setLocation(parsedLoc);
-    } catch (err: any) {
-      setFormError('Resume parsing failed. Please fill in skills manually.');
-    } finally {
-      setIsParsing(false);
-    }
+      const r = await apiClient.post('/ai/parse-resume', { resumeText });
+      if (r.data.skills) setSkills(r.data.skills);
+      if (r.data.experience) setExp(r.data.experience);
+      if (r.data.location) setLoc(r.data.location);
+    } catch { setFormError('Resume parsing failed. Fill in manually.'); }
+    finally { setIsParsing(false); }
   };
 
-  const handleAddCandidate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError('');
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault(); setFormError(''); setSubmitting(true);
     try {
       await apiClient.post('/candidates', { name, email, skills, experience, location, jobId });
-      setName(''); setEmail(''); setSkills(''); setExperience(''); setLocation(''); setResumeText('');
+      setName(''); setEmail(''); setSkills(''); setExp(''); setLoc(''); setResume(''); setShowForm(false);
       fetchData();
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || 'Failed to add candidate');
-    }
+    } catch (err: any) { setFormError(err.response?.data?.error || 'Failed to add candidate'); }
+    finally { setSubmitting(false); }
   };
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    try {
-      await apiClient.patch(`/candidates/${id}/status`, { status: newStatus });
-      fetchData();
-    } catch (err) {
-      console.error('Failed to update status', err);
-    }
+  const updateStatus = async (id: string, status: string) => {
+    try { await apiClient.patch(`/candidates/${id}/status`, { status }); fetchData(); }
+    catch { console.error('status update failed'); }
   };
 
-  const handleScore = async (candidate: any) => {
-    setLoadingScore(candidate.id);
-    try {
-      await apiClient.post('/ai/score', { candidateId: candidate.id, jobId: candidate.jobId });
-      fetchData();
-    } catch (err) {
-      console.error('Scoring failed', err);
-    } finally {
-      setLoadingScore(null);
-    }
+  const handleScore = async (c: any) => {
+    setLoadingScore(c.id);
+    try { await apiClient.post('/ai/score', { candidateId: c.id, jobId: c.job?.id || c.jobId }); fetchData(); }
+    catch (err: any) { alert(err.response?.data?.error || 'Scoring failed'); }
+    finally { setLoadingScore(null); }
   };
 
-  const handleGenerateEmail = async (candidate: any) => {
-    setLoadingEmail(candidate.id);
-    try {
-      const res = await apiClient.post('/ai/generate-email', { candidateId: candidate.id });
-      setEmailPreview(res.data);
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Email generation failed');
-    } finally {
-      setLoadingEmail(null);
-    }
+  const handleEmail = async (c: any) => {
+    setLoadingEmail(c.id);
+    try { const r = await apiClient.post('/ai/generate-email', { candidateId: c.id }); setEmailPreview(r.data); }
+    catch (err: any) { alert(err.response?.data?.error || 'Email generation failed'); }
+    finally { setLoadingEmail(null); }
   };
+
+  const inp = 'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 bg-slate-50 transition-all';
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen text-gray-900 flex flex-col h-full overflow-hidden">
-      <h1 className="text-2xl font-bold mb-6 text-indigo-900 shrink-0">Candidates Pipeline</h1>
-
-      {/* Add Candidate Form */}
-      <div className="border border-gray-300 p-6 bg-white rounded-lg shadow-sm mb-6 shrink-0">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Add New Candidate</h2>
-        {formError && (
-          <div className="border border-red-200 bg-red-50 text-red-700 p-2 rounded mb-4 text-sm">{formError}</div>
-        )}
-        <form onSubmit={handleAddCandidate} className="space-y-4">
-          {/* Basic info row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input type="text" placeholder="Full Name" required
-              className="border p-2 bg-gray-100 text-black placeholder-gray-500 rounded"
-              value={name} onChange={e => setName(e.target.value)} />
-            <input type="email" placeholder="Email Address" required
-              className="border p-2 bg-gray-100 text-black placeholder-gray-500 rounded"
-              value={email} onChange={e => setEmail(e.target.value)} />
-            <select required className="border p-2 bg-gray-100 text-black rounded"
-              value={jobId} onChange={e => setJobId(e.target.value)}>
-              {jobs.length === 0 && <option value="">No jobs available</option>}
-              {jobs.map(job => <option key={job.id} value={job.id}>{job.title}</option>)}
-            </select>
-          </div>
-
-          {/* Resume Paste — Phase 3 */}
-          <div className="border border-dashed border-indigo-300 rounded-lg p-4 bg-indigo-50">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-indigo-800">
-                📄 AI Resume Parser — Paste resume text to auto-fill skills
-              </label>
-              <button type="button" onClick={handleParseResume}
-                disabled={isParsing || !resumeText.trim()}
-                className="text-xs border border-indigo-400 bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed font-semibold">
-                {isParsing ? '⏳ Parsing...' : '✨ Parse with AI'}
-              </button>
-            </div>
-            <textarea rows={3} placeholder="Paste resume text here and click 'Parse with AI'..."
-              className="w-full border p-2 bg-white text-black placeholder-gray-400 rounded text-sm"
-              value={resumeText} onChange={e => setResumeText(e.target.value)} />
-          </div>
-
-          {/* Auto-filled or manual skills */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input type="text" placeholder="Skills (comma separated)" required
-              className="border p-2 bg-gray-100 text-black placeholder-gray-500 rounded"
-              value={skills} onChange={e => setSkills(e.target.value)} />
-            <input type="text" placeholder="Experience (e.g. 5 years)"
-              className="border p-2 bg-gray-100 text-black placeholder-gray-500 rounded"
-              value={experience} onChange={e => setExperience(e.target.value)} />
-            <input type="text" placeholder="Location"
-              className="border p-2 bg-gray-100 text-black placeholder-gray-500 rounded"
-              value={location} onChange={e => setLocation(e.target.value)} />
-          </div>
-
-          <button type="submit"
-            className="border border-indigo-300 bg-indigo-600 text-white font-bold px-6 py-2 rounded hover:bg-indigo-700">
-            Add Candidate
-          </button>
-        </form>
+    <div className="flex flex-col h-full fade-in">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 flex-shrink-0">
+        <p className="text-sm text-slate-500">{candidates.length} total candidate{candidates.length !== 1 ? 's' : ''}</p>
+        <button onClick={() => setShowForm(v => !v)}
+          className="btn-press flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm">
+          {showForm ? '✕ Cancel' : '+ Add Candidate'}
+        </button>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-4 min-w-max pb-4 h-full items-start">
+      {/* Add form */}
+      {showForm && (
+        <div className="mx-6 mt-4 bg-white border border-slate-100 rounded-2xl shadow-card p-6 flex-shrink-0 fade-in">
+          <h2 className="font-bold text-slate-900 mb-4">Add New Candidate</h2>
+          {formError && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">{formError}</div>}
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className={inp} placeholder="Full Name *" required value={name} onChange={e => setName(e.target.value)} />
+              <input type="email" className={inp} placeholder="Email Address *" required value={email} onChange={e => setEmail(e.target.value)} />
+              <select className={inp} required value={jobId} onChange={e => setJobId(e.target.value)}>
+                {jobs.length === 0 ? <option value="">No jobs — create one first</option>
+                  : jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+              </select>
+            </div>
+
+            {/* Resume parser */}
+            <div className="border border-dashed border-indigo-200 rounded-xl p-4 bg-indigo-50/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">✨ AI Resume Parser</span>
+                <button type="button" onClick={handleParse} disabled={isParsing || !resumeText.trim()}
+                  className="btn-press text-xs bg-indigo-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-all">
+                  {isParsing ? 'Parsing...' : 'Parse with AI'}
+                </button>
+              </div>
+              <textarea rows={3} value={resumeText} onChange={e => setResume(e.target.value)}
+                placeholder="Paste resume text here → click 'Parse with AI' to auto-fill skills, experience & location"
+                className="w-full border border-indigo-100 rounded-lg p-3 text-sm bg-white placeholder-slate-400 resize-none" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className={inp} placeholder="Skills (comma separated) *" required value={skills} onChange={e => setSkills(e.target.value)} />
+              <input className={inp} placeholder="Experience (e.g. 5 years)" value={experience} onChange={e => setExp(e.target.value)} />
+              <input className={inp} placeholder="Location" value={location} onChange={e => setLoc(e.target.value)} />
+            </div>
+
+            <div className="flex gap-3">
+              <button type="submit" disabled={submitting}
+                className="btn-press bg-indigo-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm text-sm">
+                {submitting ? 'Adding...' : 'Add Candidate'}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)}
+                className="text-slate-500 hover:text-slate-700 font-medium px-4 py-2.5 rounded-xl hover:bg-slate-100 text-sm transition-all">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Kanban */}
+      <div className="flex-1 overflow-x-auto px-6 py-4">
+        <div className="flex gap-3 h-full" style={{ minWidth: `${STAGES.length * 280}px` }}>
           {STAGES.map(stage => {
-            const colors = STAGE_COLORS[stage];
-            const stageCandidates = candidates.filter(c => c.status === stage);
+            const st = STAGE_STYLE[stage];
+            const cols = candidates.filter(c => c.status === stage);
             return (
-              <div key={stage}
-                className={`w-80 border ${colors.border} ${colors.bg} rounded-lg shadow-sm flex flex-col max-h-[65vh]`}>
-                <div className={`p-3 border-b ${colors.border} ${colors.header} rounded-t-lg flex justify-between items-center`}>
-                  <h3 className="font-bold text-gray-800 text-sm">{stage}</h3>
-                  <span className={`${colors.badge} px-2 py-0.5 rounded-full text-xs font-bold`}>
-                    {stageCandidates.length}
-                  </span>
+              <div key={stage} className={`flex flex-col w-64 bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden ring-1 ${st.ring}`} style={{ minHeight: '400px' }}>
+                {/* Column header */}
+                <div className={`${st.header} px-4 py-3 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${st.dot}`} />
+                    <span className="text-white font-semibold text-xs uppercase tracking-wide">{stage}</span>
+                  </div>
+                  <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">{cols.length}</span>
                 </div>
 
-                <div className="p-3 flex-1 overflow-y-auto space-y-3">
-                  {stageCandidates.map(candidate => (
-                    <div key={candidate.id}
-                      className="border border-gray-200 p-3 bg-white rounded-md shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-bold text-gray-900 text-sm leading-tight">{candidate.name}</h4>
-                        <ScoreBadge score={candidate.matchScore} />
+                {/* Cards */}
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                  {cols.length === 0 && (
+                    <div className="text-center py-6 text-slate-300 text-xs">Empty</div>
+                  )}
+                  {cols.map(c => (
+                    <div key={c.id} className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm hover:shadow-card-hover transition-all">
+                      {/* Card header */}
+                      <div className="flex items-start justify-between mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                            {c.name[0].toUpperCase()}
+                          </div>
+                          <p className="font-semibold text-slate-900 text-xs truncate">{c.name}</p>
+                        </div>
+                        <ScorePill score={c.matchScore} />
                       </div>
-                      <p className="text-xs text-indigo-600 font-medium mb-1 truncate">
-                        {candidate.job?.title || 'Unknown Job'}
-                      </p>
-                      <p className="text-xs text-gray-500 mb-1">{candidate.email}</p>
-                      {candidate.location && (
-                        <p className="text-xs text-gray-400 mb-1">📍 {candidate.location}</p>
-                      )}
-                      {candidate.experience && (
-                        <p className="text-xs text-gray-400 mb-1">🗂 {candidate.experience}</p>
-                      )}
-                      <p className="text-xs text-gray-500 bg-gray-50 p-1 rounded truncate border border-gray-200 mb-3">
-                        {candidate.skills}
+
+                      {/* Meta */}
+                      <p className="text-xs text-indigo-600 font-medium truncate mb-1">{c.job?.title}</p>
+                      <p className="text-xs text-slate-400 truncate mb-1">{c.email}</p>
+                      {c.location && <p className="text-xs text-slate-400 mb-1">📍 {c.location}</p>}
+                      {c.experience && <p className="text-xs text-slate-400 mb-2">🗂 {c.experience}</p>}
+                      <p className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-lg truncate border border-slate-100 mb-3">
+                        {c.skills}
                       </p>
 
                       {/* Stage selector */}
-                      <select
-                        className="text-xs border border-gray-300 bg-gray-50 text-gray-700 p-1 rounded w-full mb-2"
-                        value={candidate.status}
-                        onChange={(e) => updateStatus(candidate.id, e.target.value)}>
+                      <select value={c.status} onChange={e => updateStatus(c.id, e.target.value)}
+                        className="w-full border border-slate-200 bg-white text-slate-700 text-xs rounded-lg px-2 py-1.5 mb-2 transition-all">
                         {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
 
-                      {/* AI Actions */}
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleScore(candidate)}
-                          disabled={loadingScore === candidate.id}
-                          className="flex-1 text-xs border border-indigo-200 bg-indigo-50 text-indigo-700 p-1 rounded hover:bg-indigo-100 disabled:opacity-50 font-medium">
-                          {loadingScore === candidate.id ? '⏳' : '🤖'} Score
+                      {/* AI Buttons */}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button onClick={() => handleScore(c)} disabled={loadingScore === c.id}
+                          className="btn-press text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg py-1.5 hover:bg-indigo-100 disabled:opacity-50 transition-all font-semibold">
+                          {loadingScore === c.id ? '...' : '🤖 Score'}
                         </button>
-                        <button
-                          onClick={() => handleGenerateEmail(candidate)}
-                          disabled={loadingEmail === candidate.id || candidate.matchScore === 0}
-                          title={candidate.matchScore === 0 ? 'Score candidate first' : 'Generate AI email'}
-                          className="flex-1 text-xs border border-green-200 bg-green-50 text-green-700 p-1 rounded hover:bg-green-100 disabled:opacity-50 font-medium">
-                          {loadingEmail === candidate.id ? '⏳' : '✉️'} Email
+                        <button onClick={() => handleEmail(c)} disabled={loadingEmail === c.id || !c.matchScore}
+                          title={!c.matchScore ? 'Score first' : 'Generate email'}
+                          className="btn-press text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg py-1.5 hover:bg-emerald-100 disabled:opacity-50 transition-all font-semibold">
+                          {loadingEmail === c.id ? '...' : '✉️ Email'}
                         </button>
                       </div>
                     </div>
                   ))}
-                  {stageCandidates.length === 0 && (
-                    <p className="text-center text-xs text-gray-400 italic py-4">No candidates</p>
-                  )}
                 </div>
               </div>
             );
@@ -271,67 +226,47 @@ export function Candidates() {
         </div>
       </div>
 
-      {/* Email Preview Modal — Phase 4 */}
+      {/* Email Preview Modal */}
       {emailPreview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            {/* Modal header */}
-            <div className={`p-4 rounded-t-xl flex items-center justify-between ${
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setEmailPreview(null)}>
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-2xl max-h-[90vh] flex flex-col fade-in" onClick={e => e.stopPropagation()}>
+            <div className={`px-6 py-4 rounded-t-2xl flex items-center justify-between border-b ${
               emailPreview.emailType === 'INTERVIEW_INVITATION'
-                ? 'bg-green-100 border-b border-green-200'
-                : 'bg-red-50 border-b border-red-200'
+                ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'
             }`}>
               <div>
-                <h2 className="font-bold text-lg text-gray-900">
+                <h3 className="font-bold text-slate-900">
                   {emailPreview.emailType === 'INTERVIEW_INVITATION' ? '🎉 Interview Invitation' : '📋 Rejection Email'}
-                </h2>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  For <span className="font-semibold">{emailPreview.candidateName}</span>
-                  {' · '}
-                  <ScoreBadge score={emailPreview.matchScore} />
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  For <strong>{emailPreview.candidateName}</strong> · <ScorePill score={emailPreview.matchScore} />
                 </p>
               </div>
-              <button onClick={() => setEmailPreview(null)}
-                className="text-gray-500 hover:text-gray-800 text-xl font-bold">✕</button>
+              <button onClick={() => setEmailPreview(null)} className="text-slate-400 hover:text-slate-700 text-xl font-bold w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center">✕</button>
             </div>
 
-            {/* Modal body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">To</label>
-                <p className="text-sm text-gray-800 mt-1">{emailPreview.candidateEmail}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">To</p>
+                <p className="text-sm text-slate-700 font-medium">{emailPreview.candidateEmail}</p>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Subject</label>
-                <p className="text-sm font-semibold text-gray-900 mt-1 border border-gray-200 p-2 rounded bg-gray-50">
-                  {emailPreview.subject}
-                </p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</p>
+                <p className="text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl">{emailPreview.subject}</p>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Body</label>
-                <div className="text-sm text-gray-800 mt-1 border border-gray-200 p-3 rounded bg-gray-50 whitespace-pre-wrap leading-relaxed">
-                  {emailPreview.body}
-                </div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body</p>
+                <div className="text-sm text-slate-700 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl whitespace-pre-wrap leading-relaxed">{emailPreview.body}</div>
               </div>
             </div>
 
-            {/* Modal footer */}
-            <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-              <p className="text-xs text-gray-400 italic">
-                ⚠️ Review before sending — this is AI-generated content
-              </p>
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between rounded-b-2xl bg-slate-50">
+              <p className="text-xs text-slate-400">⚠️ AI-generated — review before sending</p>
               <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`Subject: ${emailPreview.subject}\n\n${emailPreview.body}`);
-                  }}
-                  className="text-sm border border-indigo-300 text-indigo-700 px-4 py-2 rounded hover:bg-indigo-50 font-medium">
-                  📋 Copy
-                </button>
+                <button onClick={() => { navigator.clipboard.writeText(`Subject: ${emailPreview.subject}\n\n${emailPreview.body}`); }}
+                  className="text-sm border border-indigo-200 text-indigo-700 px-4 py-2 rounded-xl hover:bg-indigo-50 font-medium">📋 Copy</button>
                 <button onClick={() => setEmailPreview(null)}
-                  className="text-sm border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 font-medium">
-                  Close
-                </button>
+                  className="text-sm bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-700 font-medium">Done</button>
               </div>
             </div>
           </div>

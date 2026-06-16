@@ -1,152 +1,75 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard | RecruitOS AI</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <style>
-        :root {
-            --primary: #c4c0ff;
-            --cyber-cyan: #00daf3;
-            --royal-purple: #8781ff;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #131315;
-            color: #e5e1e4;
-            overflow-x: hidden;
-        }
-        .glass-panel {
-            background: rgba(24, 24, 27, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(39, 39, 42, 1);
-            transition: border-color 0.3s ease;
-        }
-        .glass-panel:hover {
-            border-color: var(--royal-purple);
-        }
-        .ai-glow {
-            box-shadow: 0 0 20px rgba(0, 218, 243, 0.1);
-            border: 1px solid rgba(0, 218, 243, 0.3);
-        }
-        .gradient-text {
-            background: linear-gradient(135deg, #c4c0ff 0%, #00daf3 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 10px;
-        }
-        .pipeline-node {
-            clip-path: polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%, 10% 50%);
-        }
-    </style>
+    <title>RecruitOS AI — Recruiting Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <script>
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              "colors": {
-                      "primary-fixed": "#e3dfff",
-                      "tertiary-fixed": "#9cf0ff",
-                      "on-tertiary": "#00363d",
-                      "on-surface-variant": "#c7c4d8",
-                      "surface-tint": "#c4c0ff",
-                      "inverse-on-surface": "#313032",
-                      "surface-container-high": "#2a2a2c",
-                      "on-secondary": "#3c0091",
-                      "on-surface": "#e5e1e4",
-                      "secondary": "#d0bcff",
-                      "on-primary-container": "#1b0091",
-                      "surface-variant": "#353437",
-                      "surface-container-lowest": "#0e0e10",
-                      "on-secondary-container": "#c4abff",
-                      "primary-fixed-dim": "#c4c0ff",
-                      "on-tertiary-fixed": "#001f24",
-                      "on-tertiary-container": "#002f35",
-                      "secondary-fixed-dim": "#d0bcff",
-                      "inverse-primary": "#4f44e2",
-                      "on-primary-fixed": "#100069",
-                      "error-container": "#93000a",
-                      "on-error": "#690005",
-                      "on-secondary-fixed": "#23005c",
-                      "on-primary": "#2000a4",
-                      "surface-container": "#201f22",
-                      "outline-variant": "#464555",
-                      "tertiary-fixed-dim": "#00daf3",
-                      "surface": "#131315",
-                      "tertiary": "#00daf3",
-                      "surface-container-highest": "#353437",
-                      "surface-bright": "#39393b",
-                      "on-secondary-fixed-variant": "#5516be",
-                      "surface-dim": "#131315",
-                      "primary": "#c4c0ff",
-                      "primary-container": "#8781ff",
-                      "secondary-container": "#571bc1",
-                      "tertiary-container": "#009fb2",
-                      "surface-container-low": "#1c1b1d",
-                      "on-tertiary-fixed-variant": "#004f58",
-                      "on-background": "#e5e1e4",
-                      "error": "#ffb4ab",
-                      "on-primary-fixed-variant": "#3622ca",
-                      "outline": "#918fa1",
-                      "inverse-surface": "#e5e1e4",
-                      "secondary-fixed": "#e9ddff",
-                      "background": "#131315",
-                      "on-error-container": "#ffdad6"
-              },
-              "borderRadius": {
-                      "DEFAULT": "0.25rem",
-                      "lg": "0.5rem",
-                      "xl": "0.75rem",
-                      "full": "9999px"
-              },
-              "spacing": {
-                      "margin-mobile": "16px",
-                      "gutter": "24px",
-                      "xs": "8px",
-                      "sm": "16px",
-                      "margin-desktop": "40px",
-                      "xl": "80px",
-                      "base": "4px",
-                      "md": "24px",
-                      "lg": "48px"
-              },
-              "fontFamily": {
-                      "body-md": ["Inter"],
-                      "display": ["Inter"],
-                      "headline-md": ["Inter"],
-                      "label-md": ["Inter"],
-                      "body-lg": ["Inter"],
-                      "mono": ["JetBrains Mono"],
-                      "body-sm": ["Inter"],
-                      "headline-lg": ["Inter"]
-              },
-              "fontSize": {
-                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
-                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
-                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
-                      "mono": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
-                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
-                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            colors: {
+              brand: {
+                50:  '#eef2ff',
+                100: '#e0e7ff',
+                200: '#c7d2fe',
+                300: '#a5b4fc',
+                400: '#818cf8',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+                800: '#3730a3',
+                900: '#312e81',
               }
             },
-          },
+            boxShadow: {
+              'card': '0 1px 3px 0 rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.04)',
+              'card-hover': '0 4px 12px 0 rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.04)',
+              'modal': '0 20px 60px -10px rgba(0,0,0,.25)',
+            }
+          }
         }
+      }
     </script>
+    <style>
+      * { font-family: 'Inter', sans-serif; }
+      body { background: #f8fafc; color: #0f172a; }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 5px; height: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+      /* Animations */
+      @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+      .fade-in { animation: fadeIn .25s ease forwards; }
+
+      @keyframes shimmer {
+        0%   { background-position: -200% 0; }
+        100% { background-position:  200% 0; }
+      }
+      .skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 6px;
+      }
+
+      /* Focus ring */
+      input:focus, textarea:focus, select:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+        border-color: #6366f1 !important;
+      }
+
+      /* Button press */
+      .btn-press:active { transform: scale(.97); }
+    </style>
   </head>
   <body>
     <div id="root"></div>
