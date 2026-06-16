@@ -61,7 +61,7 @@ export const getCandidates = async (_req: Request, res: Response): Promise<void>
 
 export const updateCandidateStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status, notes } = req.body;
 
     const validStatuses = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'];
@@ -102,7 +102,7 @@ export const updateCandidateStatus = async (req: Request, res: Response): Promis
 
 export const deleteCandidate = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.candidate.delete({ where: { id } });
     res.status(200).json({ message: 'Candidate deleted' });
   } catch (error) {
@@ -113,7 +113,7 @@ export const deleteCandidate = async (req: Request, res: Response): Promise<void
 
 export const getCandidateHistory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     
     const history = await prisma.candidateHistory.findMany({
       where: { candidateId: id },

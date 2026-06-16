@@ -21,7 +21,7 @@ export const getAvailableRoles = async (_req: Request, res: Response): Promise<v
 // Full analytics for a specific role
 export const getRoleAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
-    const role = decodeURIComponent(req.params.role);
+    const role = decodeURIComponent(req.params.role as string);
 
     const data = await prisma.jobMarketData.findMany({
       where: { role },

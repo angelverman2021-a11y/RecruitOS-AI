@@ -45,9 +45,20 @@ const server = app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
 
+setInterval(() => {}, 1000 * 60 * 60); // Keep alive
+
+
 // Keep process alive
 process.on('SIGTERM', () => {
   server.close(() => process.exit(0));
+});
+
+process.on('exit', (code) => {
+  console.log('Process exiting with code:', code);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
 });
 
 export default app;

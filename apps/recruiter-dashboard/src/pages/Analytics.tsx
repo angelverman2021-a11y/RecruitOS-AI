@@ -3,10 +3,11 @@ import { apiClient } from '../api/client';
 import {
   Chart, CategoryScale, LinearScale, PointElement, LineElement,
   BarElement, ArcElement, Title, Tooltip, Legend, Filler,
+  BarController, LineController
 } from 'chart.js';
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, ArcElement, Title, Tooltip, Legend, Filler);
+  BarElement, ArcElement, Title, Tooltip, Legend, Filler, BarController, LineController);
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const COLORS  = ['#6366f1','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
