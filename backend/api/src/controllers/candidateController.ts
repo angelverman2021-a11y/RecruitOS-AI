@@ -20,7 +20,22 @@ export const createCandidate = async (req: Request, res: Response): Promise<void
     }
 
     const candidate = await prisma.candidate.create({
-      data: { name, email, skills, experience: experience || null, location: location || null, jobId, status: 'APPLIED' },
+      data: { 
+        name, 
+        email, 
+        skills, 
+        experience: experience || null, 
+        location: location || null, 
+        jobId, 
+        status: 'APPLIED',
+        history: {
+          create: {
+            fromStatus: null,
+            toStatus: 'APPLIED',
+            notes: 'Initial application',
+          }
+        }
+      },
       include: { job: { select: { title: true } } },
     });
 
@@ -47,7 +62,7 @@ export const getCandidates = async (_req: Request, res: Response): Promise<void>
 export const updateCandidateStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, notes } = req.body;
 
     const validStatuses = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'];
     if (!validStatuses.includes(status)) {
@@ -55,9 +70,26 @@ export const updateCandidateStatus = async (req: Request, res: Response): Promis
       return;
     }
 
+    // Get current status
+    const current = await prisma.candidate.findUnique({ where: { id }, select: { status: true } });
+    if (!current) {
+      res.status(404).json({ error: 'Candidate not found' });
+      return;
+    }
+
+    // Update candidate and create history entry
     const candidate = await prisma.candidate.update({
       where: { id },
-      data: { status },
+      data: { 
+        status,
+        history: {
+          create: {
+            fromStatus: current.status,
+            toStatus: status,
+            notes: notes || null,
+          }
+        }
+      },
       include: { job: { select: { title: true, id: true } } },
     });
 
@@ -75,6 +107,22 @@ export const deleteCandidate = async (req: Request, res: Response): Promise<void
     res.status(200).json({ message: 'Candidate deleted' });
   } catch (error) {
     console.error('Delete candidate error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getCandidateHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    const history = await prisma.candidateHistory.findMany({
+      where: { candidateId: id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    res.status(200).json(history);
+  } catch (error) {
+    console.error('Get candidate history error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

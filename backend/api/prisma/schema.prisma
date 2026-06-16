@@ -33,19 +33,32 @@ model Job {
 }
 
 model Candidate {
-  id         String   @id @default(uuid())
+  id         String             @id @default(uuid())
   name       String
-  email      String   @unique
-  skills     String   // Comma separated list of skills
+  email      String             @unique
+  skills     String             // Comma separated list of skills
   experience String?
   location   String?
   resumeUrl  String?
-  matchScore Float    @default(0.0)
-  status     String   @default("APPLIED") // APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
+  matchScore Float              @default(0.0)
+  status     String             @default("APPLIED") // APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
   jobId      String
-  job        Job      @relation(fields: [jobId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  job        Job                @relation(fields: [jobId], references: [id])
+  history    CandidateHistory[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+// Track candidate stage transitions
+model CandidateHistory {
+  id          String    @id @default(uuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  fromStatus  String?   // null if first entry
+  toStatus    String
+  notes       String?   // optional notes about the transition
+  changedBy   String?   // user who made the change
+  createdAt   DateTime  @default(now())
 }
 
 // Job Market Intelligence — historical demand data per role
